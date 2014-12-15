@@ -17,6 +17,12 @@
             android:dialogTitle="@string/pref_time_interval"
             android:key="pref_time_interval"
             android:title="@string/pref_time_interval" />
+
+        <CheckBoxPreference
+            android:enabled="false"
+            android:key="pref_expert_mode"
+            android:summary="@string/pref_expert_mode_summary"
+            android:title="@string/pref_expert_mode" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="notif_category"
