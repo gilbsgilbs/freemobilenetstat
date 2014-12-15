@@ -139,8 +139,15 @@ public class MobileNetworkChartFragment extends Fragment implements LoaderCallba
         				s.orange2GUsePercent, orange);
         mobileNetworkChart.new PieChartComponent(R.color.orange_3G_network_color1, R.color.orange_3G_network_color2,
         				s.orange3GUsePercent, orange);
-        mobileNetworkChart.new PieChartComponent(R.color.free_mobile_3G_network_color1, R.color.free_mobile_3G_network_color2,
+        PieChartView.PieChartComponent freeMobile3G =
+                mobileNetworkChart.new PieChartComponent(R.color.free_mobile_3G_network_color1, R.color.free_mobile_3G_network_color2,
         				s.freeMobile3GUsePercent, freeMobile);
+        
+        mobileNetworkChart.new PieChartComponent(R.color.free_mobile_3G_network_color1, R.color.free_mobile_3G_network_color2,
+                s.freeMobile900mhzUsePercent, freeMobile3G);
+        mobileNetworkChart.new PieChartComponent(R.color.free_mobile_4G_network_color1, R.color.free_mobile_4G_network_color2,
+                s.freeMobile2100mhzUsePercent, freeMobile3G);
+
         mobileNetworkChart.new PieChartComponent(
         		R.color.free_mobile_3G_femtocell_network_color1, R.color.free_mobile_3G_femtocell_network_color2,
 				s.freeMobileFemtocellUsePercent, freeMobile);

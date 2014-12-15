@@ -18,8 +18,11 @@ public class Statistics {
     public long orange3GTime;
     public long orangeTime;
     public long freeMobile3GTime;
+    public long femtocellTime;
     public long freeMobile4GTime;
     public long freeMobileTime;
+    public long freeMobile900mhzTime;
+    public long freeMobile2100mhzTime;
     public int orange2GUsePercent;
     public int orange3GUsePercent;
     public int orangeUsePercent;
@@ -27,12 +30,13 @@ public class Statistics {
     public int freeMobileFemtocellUsePercent;
     public int freeMobile4GUsePercent;
     public int freeMobileUsePercent;
+    public int freeMobile900mhzUsePercent;
+    public int freeMobile2100mhzUsePercent;
     public MobileOperator mobileOperator;
     public String mobileOperatorCode;
     public long connectionTime;
     public long screenOnTime;
     public long wifiOnTime;
-    public long femtocellTime;
     public int battery;
 
     @Override

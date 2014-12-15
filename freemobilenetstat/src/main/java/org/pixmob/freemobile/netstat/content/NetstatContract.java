@@ -36,6 +36,7 @@ public class NetstatContract {
         String WIFI_CONNECTED = "wifi_connected";
         String BATTERY_LEVEL = "battery_level";
 		String MOBILE_NETWORK_TYPE = "mobile_network_type";
+        String CELL_ID = "cell_id";
         String SCREEN_ON = "screen_on";
         String POWER_ON = "power_on";
         String FEMTOCELL = "femtocell";

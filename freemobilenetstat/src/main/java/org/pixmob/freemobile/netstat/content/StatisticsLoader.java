@@ -12,6 +12,7 @@ import android.util.Log;
 
 import org.pixmob.freemobile.netstat.Event;
 import org.pixmob.freemobile.netstat.MobileOperator;
+import org.pixmob.freemobile.netstat.NetworkBand;
 import org.pixmob.freemobile.netstat.NetworkClass;
 import org.pixmob.freemobile.netstat.content.NetstatContract.Events;
 import org.pixmob.freemobile.netstat.util.IOUtils;
@@ -102,9 +103,9 @@ public class StatisticsLoader extends AsyncTaskLoader<Statistics> {
         try {
             c = getContext().getContentResolver().query(
                     Events.CONTENT_URI,
-                    new String[] { Events.TIMESTAMP, Events.SCREEN_ON, Events.WIFI_CONNECTED,
-                            Events.MOBILE_CONNECTED, Events.MOBILE_NETWORK_TYPE, Events.MOBILE_OPERATOR,
-                            Events.BATTERY_LEVEL, Events.POWER_ON, Events.FEMTOCELL, Events.FIRST_INSERT }, Events.TIMESTAMP + ">?",
+                    new String[] { Events.TIMESTAMP, Events.SCREEN_ON, Events.WIFI_CONNECTED, Events.MOBILE_CONNECTED,
+                            Events.MOBILE_NETWORK_TYPE, Events.CELL_ID, Events.MOBILE_OPERATOR, Events.BATTERY_LEVEL,
+                            Events.POWER_ON, Events.FEMTOCELL, Events.FIRST_INSERT }, Events.TIMESTAMP + ">?",
                     new String[] { String.valueOf(fromTimestamp) }, Events.TIMESTAMP + " ASC");
             final int rowCount = c.getCount();
 
@@ -158,6 +159,11 @@ public class StatisticsLoader extends AsyncTaskLoader<Statistics> {
                                     s.femtocellTime += dt;
                                 } else {
                                     s.freeMobile3GTime += dt;
+                                    final NetworkBand nb = NetworkBand.fromLCID(e.cellId);
+                                    if (NetworkBand.NB_UMTS_900.equals(nb))
+                                        s.freeMobile900mhzTime += dt;
+                                    else if (NetworkBand.NB_UMTS_2100.equals(nb))
+                                        s.freeMobile2100mhzTime += dt;
                                 }
                             } else if (NetworkClass.NC_4G.equals(nc)) {
                                 s.freeMobile4GTime += dt;
@@ -185,12 +191,24 @@ public class StatisticsLoader extends AsyncTaskLoader<Statistics> {
             final double sTime = s.orangeTime + s.freeMobileTime;
             final long orangeKnownNetworkClassTime = s.orange2GTime + s.orange3GTime;
             final long freeMobileKnownNetworkClassTime =  s.freeMobile3GTime + s.freeMobile4GTime + s.femtocellTime;
+            final long freeMobileKnownNetworkBandTime = s.freeMobile2100mhzTime + s.freeMobile900mhzTime;
 
             final double[] freeMobileOrangeUsePercents = { (double)s.freeMobileTime / sTime * 100d, (double)s.orangeTime / sTime * 100d };
             Statistics.roundPercentagesUpTo100(freeMobileOrangeUsePercents);
             s.freeMobileUsePercent = (int) freeMobileOrangeUsePercents[0];
             s.orangeUsePercent = (int) freeMobileOrangeUsePercents[1];
 
+            // Orange
+            final double[] orange2G3GUsePercents =
+                    {
+                            orangeKnownNetworkClassTime == 0 ? 0 : (double)s.orange2GTime / orangeKnownNetworkClassTime * 100,
+                            orangeKnownNetworkClassTime == 0 ? 0 : (double)s.orange3GTime / orangeKnownNetworkClassTime * 100
+                    };
+            Statistics.roundPercentagesUpTo100(orange2G3GUsePercents);
+            s.orange2GUsePercent = (int) orange2G3GUsePercents[0];
+            s.orange3GUsePercent = (int) orange2G3GUsePercents[1];
+
+            // Free Mobile
             final double[] freeMobile3G4GFemtoUsePercents =
                     {
                         freeMobileKnownNetworkClassTime == 0 ? 0 : (double)s.freeMobile3GTime / freeMobileKnownNetworkClassTime * 100d,
@@ -201,15 +219,14 @@ public class StatisticsLoader extends AsyncTaskLoader<Statistics> {
             s.freeMobile3GUsePercent = (int) freeMobile3G4GFemtoUsePercents[0];
             s.freeMobile4GUsePercent = (int) freeMobile3G4GFemtoUsePercents[1];
             s.freeMobileFemtocellUsePercent = (int) freeMobile3G4GFemtoUsePercents[2];
-
-            final double[] orange2G3GUsePercents =
+            final double[] freeMobile3GNetworkBandUsePercents =
                     {
-                        orangeKnownNetworkClassTime == 0 ? 0 : (double)s.orange2GTime / orangeKnownNetworkClassTime * 100,
-                        orangeKnownNetworkClassTime == 0 ? 0 : (double)s.orange3GTime / orangeKnownNetworkClassTime * 100
+                         freeMobileKnownNetworkBandTime == 0 ? 0 : (double)s.freeMobile900mhzTime / freeMobileKnownNetworkBandTime * 100d,
+                         freeMobileKnownNetworkBandTime == 0 ? 0 : (double)s.freeMobile2100mhzTime / freeMobileKnownNetworkBandTime * 100d
                     };
-            Statistics.roundPercentagesUpTo100(orange2G3GUsePercents);
-            s.orange2GUsePercent = (int) orange2G3GUsePercents[0];
-            s.orange3GUsePercent = (int) orange2G3GUsePercents[1];
+            Statistics.roundPercentagesUpTo100(freeMobile3GNetworkBandUsePercents);
+            s.freeMobile900mhzUsePercent = (int) freeMobile3GNetworkBandUsePercents[0];
+            s.freeMobile2100mhzUsePercent = (int) freeMobile3GNetworkBandUsePercents[1];
 
             s.connectionTime = now - connectionTimestamp;
 

@@ -45,9 +45,11 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.CellIdentityGsm;
+import android.telephony.CellIdentityLte;
 import android.telephony.CellIdentityWcdma;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
 import android.telephony.CellInfoWcdma;
 import android.telephony.CellLocation;
 import android.telephony.PhoneStateListener;
@@ -63,6 +65,7 @@ import org.pixmob.freemobile.netstat.util.IntentFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +153,8 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     private boolean mobileNetworkConnected;
     private Integer lastMobileNetworkType;
     private int mobileNetworkType;
+    private Integer lastCellId;
+    private int cellId;
     private BlockingQueue< Event> pendingInsert;
     private SharedPreferences prefs;
     private Bitmap freeLargeIcon;
@@ -301,9 +306,19 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
                 
                 updateNotification(phoneStateUpdated == 1);
             }
+
+            @Override
+            public void onCellInfoChanged(List<CellInfo> cellInfo) {
+                cellId = getCellInformation().get("cid");
+                Log.d(TAG, "Got CID : " + cellId);
+                if (onPhoneStateUpdated() >= 0)
+                    updateEventDatabase();
+            }
         };
-        tm.listen(phoneMonitor, PhoneStateListener.LISTEN_SERVICE_STATE |
-            PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
+        tm.listen(phoneMonitor,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE
+                | PhoneStateListener.LISTEN_CELL_INFO);
 
         // Watch battery level.
         batteryMonitor = new BroadcastReceiver() {
@@ -507,17 +522,14 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         final MobileOperator mobOp = MobileOperator.fromString(mobileOperatorId);
 
         if (mobOp == null) { // Not Free Mobile nor Orange
-        	if (airplaneModeOn = isAirplaneModeOn()) { // Airplane mode
+        	if (airplaneModeOn = isAirplaneModeOn()) // Airplane mode
 	            tickerText = getString(R.string.stat_airplane_mode_on);
-	            contentText = getString(R.string.notif_monitoring_disabled);
-        	} else if (mobileOperatorId == null) { // No signal
+        	else if (mobileOperatorId == null) // No signal
 	            tickerText = getString(R.string.stat_no_signal);
-	            contentText = getString(R.string.notif_action_open_network_operator_settings);
-        	} else { // Foreign operator
+        	else // Foreign operator
 	            tickerText = getString(R.string.stat_connected_to_foreign_mobile_network);
-	            contentText = getString(R.string.notif_action_open_network_operator_settings);
-        	}
 
+            contentText = getString(R.string.notif_monitoring_disabled);
             smallIcon = android.R.drawable.stat_sys_warning;
             largeIcon = null; // Use small icon as large icon.
         } else { // Free Mobile or Orange detected
@@ -651,11 +663,12 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         
         // Prevent duplicated inserts.
         if (lastMobileNetworkConnected != null && lastMobileOperatorId != null
-        	&& lastIsFemtocell != null && lastMobileNetworkType != null
-            && lastMobileNetworkConnected == mobileNetworkConnected
-            && lastIsFemtocell == isFemtocell
+        	&& lastIsFemtocell != null && lastMobileNetworkType != null && lastCellId != null
+            && lastMobileNetworkConnected.equals(mobileNetworkConnected)
+            && lastIsFemtocell.equals(isFemtocell)
             && lastMobileOperatorId.equals(mobileOperatorId)
-            && lastMobileNetworkType == mobileNetworkType) {
+            && lastMobileNetworkType.equals(mobileNetworkType)
+            && lastCellId.equals(cellId) ) {
             return -1;
         }
         
@@ -669,6 +682,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         lastMobileOperatorId = mobileOperatorId;
         lastIsFemtocell = isFemtocell;
         lastMobileNetworkType = mobileNetworkType;
+        lastCellId = cellId;
         
         Log.i(TAG, "Phone state updated: operator=" + mobileOperatorId + "; connected=" + mobileNetworkConnected + "; femtocell=" + isFemtocell);
         return ret;
@@ -688,51 +702,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             return;
         }
 
-		Integer lac = null;
-        if (tm != null) {
-        	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-        	
-        		//get the cell list
-        		List<CellInfo> cellInfos = tm.getAllCellInfo();
-        		if (cellInfos != null) {
-	        		for (CellInfo cellInfo : cellInfos) {
-	        			
-	        			if (cellInfo.isRegistered()) { //we use only registered cells
-		        			if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) 
-		        					&& (cellInfo instanceof CellInfoWcdma)) { //manage the wcdma cell case
-		        				Log.d(TAG, "We got a WCDMA cell");
-		        				CellIdentityWcdma ci = ((CellInfoWcdma) cellInfo).getCellIdentity();
-		        				if (ci != null) { //save the LAC and exit loop
-		        					lac = ci.getLac();
-		        					Log.d(TAG, "We got the LAC - exit loop");
-		        					break;
-		        				}
-		        				
-		        			} else if (cellInfo instanceof CellInfoGsm) { //test the gsm case
-		        				CellIdentityGsm ci = ((CellInfoGsm) cellInfo).getCellIdentity();
-		        				Log.d(TAG, "We got a CDMA cell");
-		        				if (ci != null) { //save the LAC and exit loop
-		        					lac = ci.getLac();
-		        					Log.d(TAG, "We got the LAC - exit loop");
-		        					break;
-		        				}
-		        			}
-		        			
-	        			} else
-	        				Log.d(TAG, "Unregistered cell - skipping");
-	        		}
-        		} else
-    				Log.d(TAG, "No cell infos available");
-        		
-        	}
-        	if (lac == null) { //use old API if LAC was not found with the new method (useful for buggy devices such as Samsung Galaxy S5) or if SDK is too old
-	    		CellLocation cellLocation = tm.getCellLocation(); //cell location might be null... handle with care
-	    		if ((cellLocation != null) && (cellLocation instanceof GsmCellLocation)) {
-	    			Log.d(TAG, "We got a old GSM cell with LAC");
-	    			lac = ((GsmCellLocation) cellLocation).getLac();
-	    		}
-        	}
-        }
+		Integer lac = getCellInformation().get("lac");
         if (DEBUG) Log.d(TAG, "LAC value : " + lac);
         
         Log.i(TAG, "Femtocell value : " + isFemtocell);
@@ -742,6 +712,95 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         	isFemtocell = (lacAsString.length() == 4) && (lacAsString.subSequence(1, 3).equals(FREE_MOBILE_FEMTOCELL_LAC_CODE));
         }
 	}
+
+    /**
+     * Gets information about the current cell. Tries both GSM and WCDMA methods.
+     *
+     * @return an immutable map containing the information :
+     * keys : "type" (0 for GSM, 1 for WCDMA, 2 for LTE), "cid", "lac", "mcc", "mnc", "psc", "pci", "tac"
+     */
+    private Map<String, Integer> getCellInformation() {
+        final HashMap<String, Integer> res = new HashMap<>();
+        res.put("type", null);
+        res.put("cid", null);
+        res.put("lac", null);
+        res.put("mcc", null);
+        res.put("mnc", null);
+        res.put("psc", null);
+        res.put("pci", null);
+        res.put("tac", null);
+
+        if (tm != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                //get the cell list
+                List<CellInfo> cellInfos = tm.getAllCellInfo();
+                if (cellInfos != null) {
+                    for (CellInfo cellInfo : cellInfos) {
+                        if (cellInfo.isRegistered()) { //we use only registered cells
+                            if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+                                    && (cellInfo instanceof CellInfoWcdma)) { //manage the wcdma cell case
+                                Log.d(TAG, "We got a WCDMA cell");
+                                CellIdentityWcdma ci = ((CellInfoWcdma) cellInfo).getCellIdentity();
+                                if (ci != null) { //save the LAC and exit loop
+                                    res.put("type", 1);
+                                    res.put("cid", ci.getCid() == Integer.MAX_VALUE ? null : ci.getCid());
+                                    res.put("lac", ci.getLac() == Integer.MAX_VALUE ? null : ci.getLac());
+                                    res.put("mcc", ci.getMcc() == Integer.MAX_VALUE ? null : ci.getMcc());
+                                    res.put("mnc", ci.getMnc() == Integer.MAX_VALUE ? null : ci.getMnc());
+                                    res.put("psc", ci.getPsc() == Integer.MAX_VALUE ? null : ci.getPsc());
+                                    Log.d(TAG, "We got the cell information - exit loop");
+                                    break;
+                                }
+                            } else if (cellInfo instanceof CellInfoGsm) { //test the gsm case
+                                CellIdentityGsm ci = ((CellInfoGsm) cellInfo).getCellIdentity();
+                                Log.d(TAG, "We got a GSM cell");
+                                if (ci != null) { //save the LAC and exit loop
+                                    res.put("type", 0);
+                                    res.put("cid", ci.getCid() == Integer.MAX_VALUE ? null : ci.getCid());
+                                    res.put("lac", ci.getLac() == Integer.MAX_VALUE ? null : ci.getLac());
+                                    res.put("mcc", ci.getMcc() == Integer.MAX_VALUE ? null : ci.getMcc());
+                                    res.put("mnc", ci.getMnc() == Integer.MAX_VALUE ? null : ci.getMnc());
+                                    Log.d(TAG, "We got the cell information - exit loop");
+                                    break;
+                                }
+                            } else if (cellInfo instanceof CellInfoLte) { // test the lte case
+                                CellIdentityLte ci = ((CellInfoLte) cellInfo).getCellIdentity();
+                                Log.d(TAG, "We got a GSM cell");
+                                if (ci != null) { //save the LAC and exit loop
+                                    res.put("type", 0);
+                                    res.put("cid", ci.getCi() == Integer.MAX_VALUE ? null : ci.getCi());
+                                    res.put("mcc", ci.getMcc() == Integer.MAX_VALUE ? null : ci.getMcc());
+                                    res.put("mnc", ci.getMnc() == Integer.MAX_VALUE ? null : ci.getMnc());
+                                    res.put("pci", ci.getPci() == Integer.MAX_VALUE ? null : ci.getPci());
+                                    res.put("tac", ci.getTac() == Integer.MAX_VALUE ? null : ci.getTac());
+                                    Log.d(TAG, "We got the cell information - exit loop");
+                                    break;
+                                }
+                            }
+
+                        } else
+                            Log.d(TAG, "Unregistered cell - skipping");
+                    }
+                } else
+                    Log.d(TAG, "No cell infos available");
+
+            }
+            if (res.get("type") == null) { //use old API if LAC was not found with the new method (useful for buggy devices such as Samsung Galaxy S5) or if SDK is too old
+                CellLocation cellLocation = tm.getCellLocation(); //cell location might be null... handle with care
+                if ((cellLocation != null) && (cellLocation instanceof GsmCellLocation)) {
+                    GsmCellLocation ci = (GsmCellLocation) cellLocation;
+                    Log.d(TAG, "We got a old GSM cell with information");
+                    res.put("type", 0);
+                    res.put("cid", ci.getCid() == -1 ? null : ci.getCid());
+                    res.put("lac", ci.getLac() == -1 ? null : ci.getLac());
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD)
+                        res.put("psc", ci.getPsc() == -1 ? null : ci.getPsc());
+                }
+            }
+        }
+
+        return Collections.unmodifiableMap(res);
+    }
 
     private void updateEventDatabase() {
         final Event e = new Event();
@@ -753,6 +812,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         e.mobileOperator = lastMobileOperatorId;
         e.mobileNetworkType = lastMobileNetworkType != null ?
         		lastMobileNetworkType : TelephonyManager.NETWORK_TYPE_UNKNOWN;
+        e.cellId = lastCellId != null ? lastCellId : -1;
         e.powerOn = powerOn;
         e.femtocell  = lastIsFemtocell;
         e.firstInsert = firstInsert;

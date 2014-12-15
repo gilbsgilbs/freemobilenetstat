@@ -35,6 +35,7 @@ import static org.pixmob.freemobile.netstat.Constants.NOTIF_ACTION_STATISTICS;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_AT_BOOT;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_AUTO_RESTART_SERVICE;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_NOTIF_ACTIONS;
+import static org.pixmob.freemobile.netstat.Constants.SP_KEY_EXPERT_MODE;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_NOTIF_ACTION;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_THEME;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_TIME_INTERVAL;
@@ -74,6 +75,7 @@ public class Application extends android.app.Application {
         final Map<String, Object> defaultValues = new HashMap<>();
         defaultValues.put(SP_KEY_ENABLE_AT_BOOT, true);
         defaultValues.put(SP_KEY_TIME_INTERVAL, INTERVAL_SINCE_BOOT);
+        defaultValues.put(SP_KEY_EXPERT_MODE, false);
         defaultValues.put(SP_KEY_UPLOAD_STATS, true);
         defaultValues.put(SP_KEY_NOTIF_ACTION, NOTIF_ACTION_STATISTICS);
         defaultValues.put(SP_KEY_ENABLE_NOTIF_ACTIONS, true);

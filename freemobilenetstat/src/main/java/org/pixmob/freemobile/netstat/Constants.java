@@ -54,6 +54,10 @@ public final class Constants {
      */
     public static final String SP_KEY_TIME_INTERVAL = "pref_time_interval";
     /**
+     * {@link SharedPreferences} key: enables the expert mode.
+     */
+    public static final String SP_KEY_EXPERT_MODE = "pref_expert_mode";
+    /**
      * {@link SharedPreferences} key: upload statistics.
      */
     public static final String SP_KEY_UPLOAD_STATS = "pref_upload_stats";
