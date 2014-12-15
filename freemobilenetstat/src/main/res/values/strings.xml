@@ -48,6 +48,8 @@
     <string name="pref_enable_at_boot_summary">Démarrer automatiquement la surveillance</string>
     <string name="pref_upload_stats">Diffuser les statistiques réseau</string>
     <string name="pref_upload_stats_summary">Sur freemobilenetstat.appspot.com</string>
+    <string name="pref_expert_mode">Mode expert</string>
+    <string name="pref_expert_mode_summary">Affiche des informations complémentaires.</string>
     <string name="pref_about">À propos</string>
     <string name="pref_version">Version</string>
     <string name="pref_changelog">Nouveautés</string>
@@ -89,5 +91,4 @@
     <string name="network_free_mobile_4G">Free 4G</string>
     <string name="network_orange_2G">Orange 2G</string>
     <string name="network_orange_3G">Orange 3G</string>
-
 </resources>
