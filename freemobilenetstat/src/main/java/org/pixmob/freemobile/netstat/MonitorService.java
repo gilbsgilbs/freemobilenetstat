@@ -738,17 +738,8 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
                             if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
                                     && (cellInfo instanceof CellInfoWcdma)) { //manage the wcdma cell case
                                 Log.d(TAG, "We got a WCDMA cell");
-                                CellIdentityWcdma ci = ((CellInfoWcdma) cellInfo).getCellIdentity();
-                                if (ci != null) { //save the LAC and exit loop
-                                    res.put("type", 1);
-                                    res.put("cid", ci.getCid() == Integer.MAX_VALUE ? null : ci.getCid());
-                                    res.put("lac", ci.getLac() == Integer.MAX_VALUE ? null : ci.getLac());
-                                    res.put("mcc", ci.getMcc() == Integer.MAX_VALUE ? null : ci.getMcc());
-                                    res.put("mnc", ci.getMnc() == Integer.MAX_VALUE ? null : ci.getMnc());
-                                    res.put("psc", ci.getPsc() == Integer.MAX_VALUE ? null : ci.getPsc());
-                                    Log.d(TAG, "We got the cell information - exit loop");
+                                if (fillWcdmaCellInformation(res, (CellInfoWcdma)cellInfo))
                                     break;
-                                }
                             } else if (cellInfo instanceof CellInfoGsm) { //test the gsm case
                                 CellIdentityGsm ci = ((CellInfoGsm) cellInfo).getCellIdentity();
                                 Log.d(TAG, "We got a GSM cell");
@@ -798,6 +789,22 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         }
 
         return Collections.unmodifiableMap(res);
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    private boolean fillWcdmaCellInformation(Map<String, Integer> res, CellInfoWcdma ciw) {
+        CellIdentityWcdma ci = ciw.getCellIdentity();
+        if (ci != null) { //save the LAC and exit loop
+            res.put("type", 1);
+            res.put("cid", ci.getCid() == Integer.MAX_VALUE ? null : ci.getCid());
+            res.put("lac", ci.getLac() == Integer.MAX_VALUE ? null : ci.getLac());
+            res.put("mcc", ci.getMcc() == Integer.MAX_VALUE ? null : ci.getMcc());
+            res.put("mnc", ci.getMnc() == Integer.MAX_VALUE ? null : ci.getMnc());
+            res.put("psc", ci.getPsc() == Integer.MAX_VALUE ? null : ci.getPsc());
+            Log.d(TAG, "We got the cell information - exit loop");
+            return true;
+        }
+        return false;
     }
 
     private void updateEventDatabase() {
