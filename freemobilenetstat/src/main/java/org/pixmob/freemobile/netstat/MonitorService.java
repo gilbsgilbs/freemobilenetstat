@@ -111,9 +111,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     /**
      * SDK Versions concerned with service auto-kill issue.
      */
-    public static final Integer[] SDK_ALLOWED_TO_AUTO_RESTART_SERVICE =
-    	new Integer[] { Build.VERSION_CODES.JELLY_BEAN, Build.VERSION_CODES.JELLY_BEAN_MR1, 
-    	  Build.VERSION_CODES.JELLY_BEAN_MR2, Build.VERSION_CODES.KITKAT };
+    public static final String[] ANDROID_VERSIONS_ALLOWED_TO_AUTO_RESTART_SERVICE = new String[] { "4.4", "4.4.1", "4.4.2" };
 
     /**
      * Intent extra when requesting service restart after died
@@ -284,11 +282,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             public void onDataConnectionStateChanged(int state, int networkType) {
                 mobileNetworkType = networkType;
                 
-                // Check for a network class change
-                if (onPhoneStateUpdated() >= 0)
-                    updateEventDatabase();
-
-                updateNotification(false);
+                updateService();
             }
 
             @Override
@@ -297,28 +291,32 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
                     return;
 
                 mobileNetworkConnected =
-                    serviceState != null && serviceState.getState() == ServiceState.STATE_IN_SERVICE;
-                
-                //check for femtocell
-                final int phoneStateUpdated = onPhoneStateUpdated();
-                if (phoneStateUpdated >= 0)
-                    updateEventDatabase();
-                
-                updateNotification(phoneStateUpdated == 1);
+                        (serviceState != null) && (serviceState.getState() == ServiceState.STATE_IN_SERVICE);
+
+                updateService();
             }
 
             @Override
             public void onCellInfoChanged(List<CellInfo> cellInfo) {
                 cellId = getCellInformation().get("cid");
-                Log.d(TAG, "Got CID : " + cellId);
-                if (onPhoneStateUpdated() >= 0)
+                updateService();
+            }
+            
+            private void updateService() {
+                final int phoneStateUpdated = onPhoneStateUpdated();
+                if (phoneStateUpdated >= 0)
                     updateEventDatabase();
+
+                updateNotification(phoneStateUpdated == 1);
             }
         };
-        tm.listen(phoneMonitor,
-                PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE
-                | PhoneStateListener.LISTEN_CELL_INFO);
+        int events =
+                  PhoneStateListener.LISTEN_SERVICE_STATE
+                | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+            events |= PhoneStateListener.LISTEN_CELL_INFO;
+
+        tm.listen(phoneMonitor, events);
 
         // Watch battery level.
         batteryMonitor = new BroadcastReceiver() {
@@ -346,7 +344,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
 
 
         if (prefs.getBoolean(SP_KEY_ENABLE_AUTO_RESTART_SERVICE, false) &&
-                Arrays.asList(SDK_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.SDK_INT)) {
+                Arrays.asList(ANDROID_VERSIONS_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.RELEASE)) {
             // Kitkat and JellyBean auto-kill service workaround
             // http://stackoverflow.com/a/20735519/1527491
             ensureServiceStaysRunning();
@@ -448,7 +446,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         if (prefs.getBoolean(SP_KEY_ENABLE_AUTO_RESTART_SERVICE, false) &&
-                Arrays.asList(SDK_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.SDK_INT)) {
+                Arrays.asList(ANDROID_VERSIONS_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.RELEASE)) {
             // If task was removed, we should launch the service again.
             if (DEBUG)
                 Log.d(TAG, "onTaskRemoved > setting alarm to restart service [ Kitkat START_STICKY bug ]");
@@ -484,7 +482,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         // mgr set algorithm is better on memory consumption which is good.
     	// http://stackoverflow.com/a/20735519/1527491
         if (prefs.getBoolean(SP_KEY_ENABLE_AUTO_RESTART_SERVICE, false) &&
-        		Arrays.asList(SDK_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.SDK_INT))
+        		Arrays.asList(ANDROID_VERSIONS_ALLOWED_TO_AUTO_RESTART_SERVICE).contains(Build.VERSION.RELEASE))
         {
         	if (DEBUG)
         		Log.d(TAG, "ensureServiceStaysRunning > setting alarm. [ Kitkat START_STICKY bug ]");
@@ -524,11 +522,11 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         if (mobOp == null) { // Not Free Mobile nor Orange
         	if (airplaneModeOn = isAirplaneModeOn()) // Airplane mode
 	            tickerText = getString(R.string.stat_airplane_mode_on);
-        	else if (mobileOperatorId == null) // No signal
+	        else if (mobileOperatorId == null) // No signal
 	            tickerText = getString(R.string.stat_no_signal);
-        	else // Foreign operator
+            else // Foreign operator
 	            tickerText = getString(R.string.stat_connected_to_foreign_mobile_network);
-
+            
             contentText = getString(R.string.notif_monitoring_disabled);
             smallIcon = android.R.drawable.stat_sys_warning;
             largeIcon = null; // Use small icon as large icon.
@@ -807,14 +805,14 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         e.timestamp = System.currentTimeMillis();
         e.screenOn = pm != null && pm.isScreenOn();
         e.batteryLevel = getBatteryLevel();
-        e.wifiConnected = lastWifiConnected;
-        e.mobileConnected = powerOn && lastMobileNetworkConnected;
+        e.wifiConnected = Boolean.TRUE.equals(lastWifiConnected);
+        e.mobileConnected = powerOn && Boolean.TRUE.equals(lastMobileNetworkConnected);
         e.mobileOperator = lastMobileOperatorId;
         e.mobileNetworkType = lastMobileNetworkType != null ?
         		lastMobileNetworkType : TelephonyManager.NETWORK_TYPE_UNKNOWN;
         e.cellId = lastCellId != null ? lastCellId : -1;
         e.powerOn = powerOn;
-        e.femtocell  = lastIsFemtocell;
+        e.femtocell  = Boolean.TRUE.equals(lastIsFemtocell);
         e.firstInsert = firstInsert;
         firstInsert = false;
         
