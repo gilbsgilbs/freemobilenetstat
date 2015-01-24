@@ -48,6 +48,14 @@
             android:title="@string/pref_notif_sound_free_mobile" />
 
         <RingtonePreference
+            android:key="pref_notif_sound_4g"
+            android:ringtoneType="notification"
+            android:showDefault="true"
+            android:showSilent="true"
+            android:summary="@string/pref_notif_sound_4g_summary"
+            android:title="@string/pref_notif_sound_4g" />
+
+        <RingtonePreference
             android:key="pref_notif_sound_orange"
             android:ringtoneType="notification"
             android:showDefault="true"

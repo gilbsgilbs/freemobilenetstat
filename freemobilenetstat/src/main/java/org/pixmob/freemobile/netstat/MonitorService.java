@@ -76,6 +76,7 @@ import static org.pixmob.freemobile.netstat.BuildConfig.DEBUG;
 import static org.pixmob.freemobile.netstat.Constants.ACTION_NOTIFICATION;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_AUTO_RESTART_SERVICE;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_NOTIF_ACTIONS;
+import static org.pixmob.freemobile.netstat.Constants.SP_KEY_STAT_NOTIF_SOUND_4G;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_STAT_NOTIF_SOUND_FREE_MOBILE;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_STAT_NOTIF_SOUND_ORANGE;
 import static org.pixmob.freemobile.netstat.Constants.SP_KEY_THEME;
@@ -150,6 +151,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     private Boolean lastIsFemtocell;
     private boolean mobileNetworkConnected;
     private Integer lastMobileNetworkType;
+    private Integer lastMobileNetworkTypeForLTEDetect;
     private int mobileNetworkType;
     private Integer lastCellId;
     private int cellId;
@@ -194,7 +196,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (SP_KEY_THEME.equals(key) || SP_KEY_ENABLE_NOTIF_ACTIONS.equals(key)) {
-            updateNotification(false);
+            updateNotification(false, false);
         }
     }
 
@@ -285,8 +287,6 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         phoneMonitor = new PhoneStateListener() {
             @Override
             public void onDataConnectionStateChanged(int state, int networkType) {
-                mobileNetworkType = networkType;
-                
                 updateService();
             }
 
@@ -308,11 +308,12 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             }
             
             private void updateService() {
+                mobileNetworkType = tm.getNetworkType(); //update the network type to have the latest
                 final int phoneStateUpdated = onPhoneStateUpdated();
                 if (phoneStateUpdated >= 0)
                     updateEventDatabase();
 
-                updateNotification(phoneStateUpdated == 1);
+                updateNotification(true, phoneStateUpdated == 1);
             }
         };
         int events =
@@ -419,7 +420,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
                 if (DEBUG) {
                     Log.d(TAG, "onStartCommand > update the notification on lockscreen (hide / show)");
                 }
-                updateNotification(false);
+                updateNotification(false, false);
             }
         }
 
@@ -429,7 +430,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         // Update with current state.
         onConnectivityUpdated();
         onPhoneStateUpdated();
-        updateNotification(false);
+        updateNotification(false, false);
 
         return START_STICKY;
     }
@@ -513,8 +514,10 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
 
     /**
      * Update the status bar notification.
+     * @param playSound play notification sound
+     * @param phoneStateUpdated if phone state has been updated
      */
-	private void updateNotification(boolean playSound) {
+	private void updateNotification(boolean playSound, boolean phoneStateUpdated) {
         String tickerText, contentText;
         int smallIcon;
         final int notificationPriority = NotificationCompat.PRIORITY_LOW;
@@ -522,7 +525,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         final PendingIntent contentIntent = openUIPendingIntent;
         boolean airplaneModeOn = false;
 
-        final MobileOperator mobOp = MobileOperator.fromString(mobileOperatorId);
+        MobileOperator mobOp = MobileOperator.fromString(mobileOperatorId);
 
         if (mobOp == null) { // Not Free Mobile nor Orange
         	if (airplaneModeOn = isAirplaneModeOn()) // Airplane mode
@@ -535,14 +538,16 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             contentText = getString(R.string.notif_monitoring_disabled);
             smallIcon = android.R.drawable.stat_sys_warning;
             largeIcon = null; // Use small icon as large icon.
+
         } else { // Free Mobile or Orange detected
             tickerText = String.format(getString(R.string.stat_connected_to_mobile_network), mobOp.toName(this));
 
             final Integer networkTypeRes = NETWORK_TYPE_STRINGS.get(mobileNetworkType, R.string.network_type_unknown);
             contentText = String.format(getString(R.string.mobile_network_type), getString(networkTypeRes));
-            if (MobileOperator.FREE_MOBILE.equals(mobOp) && isFemtocell)
-            	contentText = getString(R.string.network_free_femtocell, contentText);
-            
+            if (MobileOperator.FREE_MOBILE.equals(mobOp) && isFemtocell) {
+                contentText = getString(R.string.network_free_femtocell, contentText);
+            }
+
             smallIcon = getStatIcon(mobOp);
             largeIcon = getStatLargeIcon(mobOp);
         }
@@ -573,13 +578,40 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             }
         }
 
+        if (playSound) {
+            Log.d(TAG, "Play notification sound");
 
-        if ((playSound) && (prefs != null)) {
-            final String rawSoundUri = prefs.getString((mobOp == MobileOperator.FREE_MOBILE)
-                    ? SP_KEY_STAT_NOTIF_SOUND_FREE_MOBILE : SP_KEY_STAT_NOTIF_SOUND_ORANGE, null);
-            if (rawSoundUri != null) {
-                final Uri soundUri = Uri.parse(rawSoundUri);
-                nBuilder.setSound(soundUri);
+            // check if we need to trigger LTE alarm
+            // network type changed from 3G to LTE
+            boolean lteAlarm = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+                    && (lastMobileNetworkTypeForLTEDetect != null)
+                    && (lastMobileNetworkTypeForLTEDetect != TelephonyManager.NETWORK_TYPE_LTE)
+                    && (mobileNetworkType == TelephonyManager.NETWORK_TYPE_LTE));
+
+            // other case : trigger FreeMobile 3G alarm if we changed network type from LTE to 3G
+            if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) // first, are we using a compatible android version ?
+                    && (mobOp == MobileOperator.FREE_MOBILE) // second, are we on FreeMobile network ?
+                    && (!lteAlarm) // third, are not we on LTE network
+                    && (lastMobileNetworkTypeForLTEDetect != null)
+                    && (lastMobileNetworkTypeForLTEDetect.equals(TelephonyManager.NETWORK_TYPE_LTE))) { // fourth, and the last mobile network type is LTE
+                phoneStateUpdated = true; // trigger 3G alarm
+            }
+
+            if ((phoneStateUpdated || lteAlarm) && (prefs != null)) {
+                String rawSoundUri = null;
+                if (lteAlarm) { // we are in LTE alarm case
+                    Log.d(TAG, "Try to play LTE alarm");
+                    rawSoundUri = prefs.getString(SP_KEY_STAT_NOTIF_SOUND_4G, null);
+                } else if (phoneStateUpdated) { // we are in operator change case
+                    Log.d(TAG, "Try to play normal operator alarm");
+                    rawSoundUri = prefs.getString((mobOp == MobileOperator.FREE_MOBILE) ? SP_KEY_STAT_NOTIF_SOUND_FREE_MOBILE : SP_KEY_STAT_NOTIF_SOUND_ORANGE, null);
+                }
+                if (rawSoundUri != null) {
+                    final Uri soundUri = Uri.parse(rawSoundUri);
+                    nBuilder.setSound(soundUri);
+                }
+            } else if (BuildConfig.DEBUG) {
+                Log.d(TAG, "No notification sound to play");
             }
         }
 
@@ -666,7 +698,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         
         // Prevent duplicated inserts.
         if (lastMobileNetworkConnected != null && lastMobileOperatorId != null
-        	&& lastIsFemtocell != null && lastMobileNetworkType != null && lastCellId != null
+            && lastIsFemtocell != null && lastMobileNetworkType != null  && lastCellId != null
             && lastMobileNetworkConnected.equals(mobileNetworkConnected)
             && lastIsFemtocell.equals(isFemtocell)
             && lastMobileOperatorId.equals(mobileOperatorId)
@@ -684,6 +716,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         lastMobileNetworkConnected = mobileNetworkConnected;
         lastMobileOperatorId = mobileOperatorId;
         lastIsFemtocell = isFemtocell;
+        lastMobileNetworkTypeForLTEDetect = lastMobileNetworkType; // save previous network type for LTE detection
         lastMobileNetworkType = mobileNetworkType;
         lastCellId = cellId;
         
@@ -822,7 +855,6 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
         e.mobileOperator = lastMobileOperatorId;
         e.mobileNetworkType = lastMobileNetworkType != null ?
         		lastMobileNetworkType : TelephonyManager.NETWORK_TYPE_UNKNOWN;
-        e.cellId = lastCellId != null ? lastCellId : -1;
         e.powerOn = powerOn;
         e.femtocell  = Boolean.TRUE.equals(lastIsFemtocell);
         e.firstInsert = firstInsert;
