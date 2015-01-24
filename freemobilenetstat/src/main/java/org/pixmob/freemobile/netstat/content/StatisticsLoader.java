@@ -152,7 +152,7 @@ public class StatisticsLoader extends AsyncTaskLoader<Statistics> {
                                     s.femtocellTime += dt;
                                 } else {
                                     s.freeMobile3GTime += dt;
-                                    final NetworkBand nb = NetworkBand.fromLCID(e.cellId);
+                                    final NetworkBand nb = NetworkBand.fromLCID(e.cellId, NetworkClass.NC_3G);
                                     if (NetworkBand.NB_UMTS_900.equals(nb))
                                         s.freeMobile900mhzTime += dt;
                                     else if (NetworkBand.NB_UMTS_2100.equals(nb))
