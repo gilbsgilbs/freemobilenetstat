@@ -31,7 +31,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
@@ -58,7 +58,7 @@ import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_AUTO_SEND_PH
  * @author Pixmob
  */
 @SuppressLint("CommitPrefEdits")
-public class Netstat extends FragmentActivity {
+public class Netstat extends AppCompatActivity {
 
     public static final String[] REQUIRED_PERMISSIONS = {
         Manifest.permission.ACCESS_COARSE_LOCATION,
