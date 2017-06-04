@@ -69,8 +69,8 @@
     <string name="pref_disable_all_sounds_summary">Tous les alarmes sonores seront désactivées</string>
     <string name="pref_enable_auto_restart_service">Relancement automatique du service</string>
     <string name="pref_enable_auto_restart_service_summary">Si la notification ne s\'actualise plus (Bug KitKat).</string>
-    <string name="pref_enable_auto_send_phone_listener_events">Support pour le One+2</string>
-    <string name="pref_enable_auto_send_phone_listener_events_summary">Solution de contournement pour le One+2 (peut réduire l\'autonomie)</string>
+    <string name="pref_enable_auto_send_phone_listener_events">Rafraîchir le réseau périodiquement</string>
+    <string name="pref_enable_auto_send_phone_listener_events_summary">Utile lorsque l\'icône reste bloquée sur Free ou Orange. (peut réduire l\'autonomie)</string>
     <string name="pref_enable_manual_mode_detection">Détecter la sélection manuelle</string>
     <string name="pref_enable_manual_mode_detection_summary">Un message d\'erreur apparaîtra si vous avez activé le mode de sélection manuel.</string>
     <string name="pref_time_interval">Afficher les données depuis…</string>

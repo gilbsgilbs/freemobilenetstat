@@ -48,6 +48,11 @@ import org.pixmob.freemobile.netstat.feature.Features;
 import org.pixmob.freemobile.netstat.feature.SharedPreferencesSaverFeature;
 import org.pixmob.freemobile.netstat.util.IntentFactory;
 
+import java.util.Arrays;
+import java.util.HashMap;
+
+import static org.pixmob.freemobile.netstat.Constants.SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS;
+
 /**
  * Main application activity.
  * @author Pixmob
@@ -63,6 +68,17 @@ public class Netstat extends FragmentActivity {
 
     public static final int REQUIRED_PERMISSIONS_CODE = 0;
     public static final int EXPORT_TASK_PERMISSION_CODE = 1;
+
+
+    /**
+     * Buggy devices that doesn't take the event listeners into account.
+     * Map<Manufacturer, Models list (empty means all models)>
+     */
+    private static final HashMap<String, String[]> FORCE_REFRESH_DEVICES = new HashMap<>();
+
+    static {
+        FORCE_REFRESH_DEVICES.put("OnePlus", new String[]{});
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -98,15 +114,25 @@ public class Netstat extends FragmentActivity {
             prefsEditor.putInt(versionKey, applicationVersion);
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
 
+            if (lastKnownVersion < 63) {
+                prefsEditor.remove(SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS);
+            }
+            if (!prefs.contains(SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS)) {
+                final String[] force_refresh_devices = FORCE_REFRESH_DEVICES.get(Build.MANUFACTURER);
+                if (
+                    force_refresh_devices != null &&
+                    (force_refresh_devices.length == 0 || Arrays.asList(force_refresh_devices).contains(Build.MODEL))
+                ) {
+                    prefsEditor.putBoolean(SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS, true);
+                }
+            }
+
             // The application was updated: let's show changelog.
             startActivity(new Intent(this, DocumentBrowser.class).putExtra(DocumentBrowser.INTENT_EXTRA_URL,
                     "CHANGELOG.html"));
         }
 
         requestRequiredPermissions();
-
-        // FIXME Remove this (+ SP key + messages strings + workaround in MonitorService) once OxygenOS has fixed the bug.
-        showOnePlusTwoErrorMessage();
     }
 
     private void checkManualMode() {
@@ -245,31 +271,6 @@ public class Netstat extends FragmentActivity {
         }
     }
 
-    private void showOnePlusTwoErrorMessage() {
-        if (MonitorService.ONE_PLUS_TWO_MANUFACTURER.equals(Build.MANUFACTURER) && MonitorService.ONE_PLUS_TWO_MODEL.equals(Build.MODEL)) {
-            final SharedPreferences prefs = getSharedPreferences(Constants.SP_NAME, MODE_PRIVATE);
-            if (!prefs.getBoolean(Constants.SP_KEY_ONE_PLUS_TWO_MESSAGE_SEEN, false)) {
-                Resources res = getResources();
-                new AlertDialog.Builder(this)
-                        .setTitle(res.getString(R.string.one_plus_two_error_message_title))
-                        .setMessage(res.getString(R.string.one_plus_two_error_message_message))
-                        .setPositiveButton(
-                                res.getString(R.string.one_plus_two_error_message_dismiss),
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        final SharedPreferences.Editor prefsEditor = prefs.edit();
-                                        prefsEditor.putBoolean(Constants.SP_KEY_ONE_PLUS_TWO_MESSAGE_SEEN, true);
-                                        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
-                                    }
-                                }
-                        )
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .show();
-            }
-        }
-
-    }
-    
     public void enlargeChart(View view) {
     	Intent intent = new Intent(this, MobileNetworkChartActivity.class);
     	startActivity(intent);

@@ -115,12 +115,6 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
      */
     public static final String[] ANDROID_VERSIONS_ALLOWED_TO_AUTO_RESTART_SERVICE = new String[] { "4.4", "4.4.1", "4.4.2" };
     /**
-     * One+2
-     */
-    public static final String ONE_PLUS_TWO_MANUFACTURER = "OnePlus";
-    public static final String ONE_PLUS_TWO_MODEL = "ONE A2003";
-
-    /**
      * Intent extra when requesting service restart after died
      */
     private static final String INTENT_ALARM_RESTART_SERVICE_DIED = "ALARM_RESTART_SERVICE_DIED";
@@ -377,10 +371,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
             ensureServiceStaysRunning();
         }
 
-        if (prefs.getBoolean(SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS, false) &&
-                ONE_PLUS_TWO_MANUFACTURER.equals(Build.MANUFACTURER) && ONE_PLUS_TWO_MODEL.equals(Build.MODEL)) {
-            // One+2 (OxygenOS) does not send PhoneState events when the application is in foreground.
-            // This is a bug. We are still waiting for a solution. This workaround will force PhoneState to refresh.
+        if (prefs.getBoolean(SP_KEY_ENABLE_AUTO_SEND_PHONE_LISTENER_EVENTS, false)) {
             refreshPhoneStatePeriodically();
         }
     }
@@ -549,7 +540,7 @@ public class MonitorService extends Service implements OnSharedPreferenceChangeL
     private void refreshPhoneStatePeriodically() {
         if (DEBUG) Log.d(TAG, "refreshPhoneStatePeriodically > Setting service restart");
         final Handler h = new Handler();
-        final int delay = 60 * 1000; //milliseconds
+        final int delay = 60 * 1000; // milliseconds
 
         h.postDelayed(new Runnable(){
             public void run(){
