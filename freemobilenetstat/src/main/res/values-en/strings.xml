@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Free Mobile Netstat</string>
+    <string name="permission_request">Permission request</string>
+    <string name="stat_connected_to_foreign_mobile_network">Connected to a foreign mobile network</string>
+    <string name="stat_connected_to_mobile_network">Connected to %s network</string>
+    <string name="stat_airplane_mode_on">Plane mode turned on</string>
+    <string name="stat_no_signal">No signal</string>
+    <string name="mobile_network_type">%s network</string>
+    <string name="network_free_mobile">Free</string>
+    <string name="network_orange">Orange</string>
+    <string name="network_free_mobile_femtocell">Femtocell</string>
+    <string name="network_unknown">unknown</string>
+    <string name="network_type_unknown">unknown</string>
+    <string name="network_type_gprs">2G (GPRS)</string>
+    <string name="network_type_edge">2G (EDGE)</string>
+    <string name="network_type_umts">3G (UMTS)</string>
+    <string name="network_type_hsdpa">3G+ (HSDPA)</string>
+    <string name="network_type_hsupa">3G+ (HSUPA)</string>
+    <string name="network_type_hspa">3G+ (HSPA)</string>
+    <string name="network_type_hspap">3G+ (HSPAP)</string>
+    <string name="network_type_cdma">CDMA</string>
+    <string name="network_type_lte">4G (LTE)</string>
+    <string name="network_free_femtocell">%s - Femtocell</string>
+    <string name="service_monitor">Connections tracking service</string>
+    <string name="stat_mobile_network">Current network</string>
+    <string name="stat_mobile_code">MCC+MNC</string>
+    <string name="stat_screen">Screen on</string>
+    <string name="stat_wifi">Wi-Fi enabled</string>
+    <string name="stat_battery">Battery</string>
+    <string name="stat_on_orange">On Orange</string>
+    <string name="stat_on_free_mobile">On Free</string>
+    <string name="stat_on_femtocell">Including Femtocell</string>
+    <string name="days">d</string>
+    <string name="hours">h</string>
+    <string name="minutes">m</string>
+    <string name="seconds">s</string>
+    <string name="exporting_data">Data export in progress...</string>
+    <string name="external_storage_not_available">External storage unavailable</string>
+    <string name="export_done">Data successfully exported</string>
+    <string name="export_error">Cannot export data</string>
+    <string name="menu_export">Export</string>
+    <string name="menu_preferences">Settings</string>
+    <string name="menu_quit">Quit</string>
+    <string name="chart">Connections statistics</string>
+    <string name="pref_background_service">Network monitoring</string>
+    <string name="pref_enable_at_boot">Start at boot</string>
+    <string name="pref_enable_at_boot_summary">Automatically start network monitoring</string>
+    <string name="pref_upload_stats">Upload network statistics</string>
+    <string name="pref_upload_stats_summary">On freemobilenetstat.appspot.com</string>
+    <string name="pref_about">About</string>
+    <string name="pref_version">Version</string>
+    <string name="pref_changelog">Changelog</string>
+    <string name="pref_changelog_summary">New features in this version</string>
+    <string name="pref_license">License</string>
+    <string name="pref_license_summary">Source code availble on github.com/vdavy/freemobilenetstat</string>
+    <string name="pref_homesite">National statistics</string>
+    <string name="pref_homesite_summary">Open freemobilenetstat.appspot.com</string>
+    <string name="pref_notif_sound_free_mobile">Free Mobile 3G notification sound</string>
+    <string name="pref_notif_sound_free_mobile_summary">Warn me when I switch to Free Mobile 3G network</string>
+    <string name="pref_notif_sound_orange">Orange notification sound</string>
+    <string name="pref_notif_sound_orange_summary">Warn me when I switch to Orange network</string>
+    <string name="pref_notif_sound_4g">Free Mobile 4G notification sound</string>
+    <string name="pref_notif_sound_4g_summary">Warn me when I switch to Free Mobile 4G network (Only works with Honeycomb and superior versions)</string>
+    <string name="pref_notif_sound_femto">Free Mobile Femtocell notification sound</string>
+    <string name="pref_notif_sound_femto_summary">Warn me when I switch to Free Mobile Femtocell network</string>
+    <string name="pref_disable_all_sounds">Disable all the notification sounds</string>
+    <string name="pref_disable_all_sounds_summary">All the notification sounds have been disabled</string>
+    <string name="pref_enable_auto_restart_service">Restart service automatically</string>
+    <string name="pref_enable_auto_restart_service_summary">If notifications are not updated anymore (Kitkat bug)</string>
+    <string name="pref_enable_auto_send_phone_listener_events">Refresh network status periodically</string>
+    <string name="pref_enable_auto_send_phone_listener_events_summary">Useful when blocked on Orange or Free notification icon (May reduce battery life)</string>
+    <string name="pref_enable_manual_mode_detection">Disable manual detection</string>
+    <string name="pref_enable_manual_mode_detection_summary">An error message will appear is you enable manual detection</string>
+    <string name="pref_time_interval">Show data since...</string>
+    <string name="pref_notif">Notification</string>
+    <string name="pref_notif_action">Notification action</string>
+    <string name="pref_notif_action_summary_netop">Show network operators</string>
+    <string name="pref_notif_action_summary_stats">Show statistics</string>
+    <string name="pref_enable_notif_actions">Show notification actions</string>
+    <string name="pref_enable_notif_actions_summary">Include shorcuts under the notification</string>
+    <string name="pref_theme">Theme</string>
+    <string name="theme_color">Colour</string>
+    <string name="theme_default">Default</string>
+    <string name="theme_pie">Pie Chart</string>
+    <string name="notif_action_statistics">Statistics</string>
+    <string name="notif_action_network_operator_settings">Network Operator</string>
+    <string name="notif_action_open_network_operator_settings">Network operator settings</string>
+    <string name="notif_action_open_wireless_settings">Wireless settings</string>
+    <string name="notif_monitoring_disabled">Monitoring disabled</string>
+    <string name="interval_since_boot">Phone startup</string>
+    <string name="interval_one_day">One day</string>
+    <string name="interval_one_week">One week</string>
+    <string name="interval_one_month">One month</string>
+    <string name="unsupported_sim_error">Unsupported SIM Card</string>
+    <string name="unsupported_sim_message">The SIM card you are currently using is not supported by the application</string>
+    <string name="quit_application">Close the application</string>
+    <string name="network_free_mobile_3G">Free 3G</string>
+    <string name="network_free_mobile_4G">Free 4G</string>
+    <string name="network_orange_2G">Orange 2G</string>
+    <string name="network_orange_3G">Orange 3G</string>
+    <string name="all_alerts_removed">All the alerts havec been removed</string>
+    <string name="required_permission_explanation_title">The application required some permissions</string>
+    <string name="required_permission_explanation_message">
+        Those permissions are required to access the current used antenna.
+        They will never be used for others purposes.
+        If you have permanently denied those permissions, please reinstall the application.
+    </string>
+    <string name="manual_mode_dialog_title">Manual operator selection detected</string>
+    <string name="manual_mode_dialog_message">
+        Manual operator selection will make the automatic roaming to Free unable to work after sometime (even if Free is selected).
+        Please select automatic network operator selection on your phone settings.
+    </string>
+    <string name="manual_mode_dialog_action_dismiss">Dismiss</string>
+    <string name="manual_mode_dialog_action_close">Close</string>
+    <string name="manual_mode_dialog_action_open_network_settings">Open network operators settings</string>
+    <string name="one_plus_two_error_message_title">Unsupported device</string>
+    <string name="one_plus_two_error_message_message">
+        The OxygenOS layer of the One+2 suffer from a bug that prevent the good working of this application.
+        Workaround have been implemented, but it will use more battery power.
+        Unfortunately, even after many requests to OnePlus, we could not get any fix from them.
+    </string>
+    <string name="one_plus_two_error_message_dismiss">Dismiss</string>
+</resources>
